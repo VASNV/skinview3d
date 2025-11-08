@@ -29,11 +29,10 @@ jobs:
       # --- ДОБАВЛЕНИЕ АРТЕФАКТА ЛИНТИНГА ---
       - name: Upload Lint Report Artifact
         uses: actions/upload-artifact@v4
+        if: always() # <-- УСЛОВИЕ ПЕРЕМЕЩЕНО НА УРОВЕНЬ ШАГА
         with:
           name: lint-report
           path: lint-report.json
-          # Используйте if: always() если вы хотите, чтобы артефакт загружался даже при сбое линтинга
-          if: always()
 
   test:
     runs-on: ubuntu-latest
@@ -69,7 +68,7 @@ jobs:
       # Если ваш тест генерирует отчеты (например, Jest coverage reports), их тоже можно загрузить.
       - name: Upload Test Coverage Artifact
         uses: actions/upload-artifact@v4
+        if: success() # <-- УСЛОВИЕ ПЕРЕМЕЩЕНО НА УРОВЕНЬ ШАГА
         with:
           name: test-coverage-report
           path: coverage/lcov-report
-          if: success()
