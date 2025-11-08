@@ -12,34 +12,64 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Cache npm dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    - name: Install
-      run: npm ci
-    - name: Lint
-      run: "npm run test:lint"
+      - uses: actions/checkout@v4
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Install
+        run: npm ci
+      - name: Lint
+        # Предполагаем, что эта команда может генерировать отчет, например, lint-report.json
+        run: "npm run test:lint"
+      
+      # --- ДОБАВЛЕНИЕ АРТЕФАКТА ЛИНТИНГА ---
+      - name: Upload Lint Report Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: lint-report.json
+          # Используйте if: always() если вы хотите, чтобы артефакт загружался даже при сбое линтинга
+          if: always()
 
   test:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Cache npm dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.npm
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    - name: Install
-      run: npm ci
-    - name: Build
-      run: npm run build
-    - name: Test
-      run: npm test
+      - uses: actions/checkout@v4
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm test
+
+      # --- ДОБАВЛЕНИЕ АРТЕФАКТА СБОРКИ ---
+      - name: Upload Build Artifact (dist)
+        uses: actions/upload-artifact@v4
+        with:
+          # Имя артефакта, которое будет отображаться в Actions
+          name: build-artifact
+          # Путь к папке, созданной командой 'npm run build'
+          path: dist
+          # Настройка для сохранения артефакта на 7 дней
+          retention-days: 7
+
+      # --- ДОБАВЛЕНИЕ АРТЕФАКТА ТЕСТОВ (ОПЦИОНАЛЬНО) ---
+      # Если ваш тест генерирует отчеты (например, Jest coverage reports), их тоже можно загрузить.
+      - name: Upload Test Coverage Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage-report
+          path: coverage/lcov-report
+          if: success()
