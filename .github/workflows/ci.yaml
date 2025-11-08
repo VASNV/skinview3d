@@ -29,10 +29,12 @@ jobs:
       # --- ДОБАВЛЕНИЕ АРТЕФАКТА ЛИНТИНГА ---
       - name: Upload Lint Report Artifact
         uses: actions/upload-artifact@v4
-        if: always() # <-- УСЛОВИЕ ПЕРЕМЕЩЕНО НА УРОВЕНЬ ШАГА
+        if: always() # Условие загрузки независимо от успеха линтинга
         with:
           name: lint-report
           path: lint-report.json
+          # Игнорируем, если файл lint-report.json не был создан
+          if-no-files-found: ignore
 
   test:
     runs-on: ubuntu-latest
@@ -50,6 +52,11 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+      
+      # --- ДИАГНОСТИКА: ПРОВЕРКА СОЗДАННЫХ ПАПОК ---
+      - name: List files after build (DIAGNOSTIC)
+        run: ls -R
+        
       - name: Test
         run: npm test
 
@@ -57,18 +64,18 @@ jobs:
       - name: Upload Build Artifact (dist)
         uses: actions/upload-artifact@v4
         with:
-          # Имя артефакта, которое будет отображаться в Actions
           name: build-artifact
-          # Путь к папке, созданной командой 'npm run build'
-          path: dist
-          # Настройка для сохранения артефакта на 7 дней
+          # САМЫЙ КРИТИЧНЫЙ ПАРАМЕТР: ЕСЛИ 'dist' НЕ РАБОТАЕТ, ПРОВЕРЬТЕ ВЫВОД 'DIAGNOSTIC'
+          path: dist 
           retention-days: 7
+          # if-no-files-found: error - по умолчанию, выдаст ошибку, если сборка не создана
 
       # --- ДОБАВЛЕНИЕ АРТЕФАКТА ТЕСТОВ (ОПЦИОНАЛЬНО) ---
-      # Если ваш тест генерирует отчеты (например, Jest coverage reports), их тоже можно загрузить.
       - name: Upload Test Coverage Artifact
         uses: actions/upload-artifact@v4
-        if: success() # <-- УСЛОВИЕ ПЕРЕМЕЩЕНО НА УРОВЕНЬ ШАГА
+        if: success()
         with:
           name: test-coverage-report
           path: coverage/lcov-report
+          # Игнорируем, если отчет о покрытии не был создан
+          if-no-files-found: ignore
